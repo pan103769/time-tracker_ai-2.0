@@ -1,0 +1,65 @@
+# Python & Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Databases & User Data
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+tracker_backup_*.db
+
+# Backups & Temporary Files
+*.backup*
+*.bak
+*.tmp
+scratch/
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+tracker.log
+logs/
+
+# Build & Packaging Artifacts
+build/
+dist/
+dist_installer/
+*.spec.bak
+_internal/
+
+# Frontend Node & Vite
+web/node_modules/
+web/dist/
+web/.vite/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test & Debug Artefacts
+vision_test.png
+debug_shots/
+edge_test_profile/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Operating System & IDE
+.DS_Store
+Thumbs.db
+ehthumbs.db
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

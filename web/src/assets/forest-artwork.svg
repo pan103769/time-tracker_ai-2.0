@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 800" width="100%" height="100%" preserveAspectRatio="xMinYMax slice">
+  <defs>
+    <!-- Rich Night Sky & Ambient Aurora Nebula Gradients matching Reference -->
+    <radialGradient id="skyNebula" cx="25%" cy="75%" r="70%">
+      <stop offset="0%" stop-color="#4C1D95" stop-opacity="0.9" />
+      <stop offset="30%" stop-color="#3B0764" stop-opacity="0.75" />
+      <stop offset="55%" stop-color="#1E1035" stop-opacity="0.55" />
+      <stop offset="85%" stop-color="#0B0F19" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#06090F" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="auroraViolet" cx="15%" cy="60%" r="55%">
+      <stop offset="0%" stop-color="#6B21A8" stop-opacity="0.65" />
+      <stop offset="45%" stop-color="#311042" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#06090F" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="cyanAmbientGlow" cx="50%" cy="45%" r="40%">
+      <stop offset="0%" stop-color="#0E7490" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#080D1A" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Fade smoothly to the right so center dashboard content remains on solid dark background -->
+    <linearGradient id="fadeSmoothRight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="1" />
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.9" />
+      <stop offset="80%" stop-color="#FFFFFF" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+
+    <mask id="landscapeMask">
+      <rect width="900" height="800" fill="url(#fadeSmoothRight)" />
+    </mask>
+
+    <!-- Conical Pine Tree 1 (Sharp Silhouette) -->
+    <g id="pineTallSharp">
+      <path d="M0,0 L2,0 L1,-210 L-1,-210 L-2,0 Z" fill="#04060B" />
+      <polygon points="0,-230 -10,-212 10,-212" fill="#060911" />
+      <polygon points="0,-216 -16,-195 16,-195" fill="#060911" />
+      <polygon points="0,-198 -22,-172 22,-172" fill="#060911" />
+      <polygon points="0,-175 -28,-144 28,-144" fill="#060911" />
+      <polygon points="0,-147 -35,-110 35,-110" fill="#060911" />
+      <polygon points="0,-113 -42,-70 42,-70" fill="#060911" />
+      <polygon points="0,-74 -50,-24 50,-24" fill="#060911" />
+    </g>
+
+    <!-- Bushy Pine Tree 2 -->
+    <g id="pineBushySharp">
+      <path d="M0,0 L3,0 L1,-160 L-1,-160 L-3,0 Z" fill="#030509" />
+      <polygon points="0,-180 -12,-162 12,-162" fill="#05070D" />
+      <polygon points="0,-165 -20,-142 20,-142" fill="#05070D" />
+      <polygon points="0,-145 -30,-116 30,-116" fill="#05070D" />
+      <polygon points="0,-120 -38,-85 38,-85" fill="#05070D" />
+      <polygon points="0,-90 -48,-50 48,-50" fill="#05070D" />
+      <polygon points="0,-54 -55,-12 55,-12" fill="#05070D" />
+    </g>
+
+    <!-- Mid-distance Pine Tree 3 -->
+    <g id="pineMidSlope">
+      <polygon points="0,-135 -9,-122 9,-122" fill="#0A0E18" />
+      <polygon points="0,-124 -16,-106 16,-106" fill="#0A0E18" />
+      <polygon points="0,-108 -23,-86 23,-86" fill="#0A0E18" />
+      <polygon points="0,-88 -30,-58 30,-58" fill="#0A0E18" />
+      <polygon points="0,-62 -37,-28 37,-28" fill="#0A0E18" />
+      <polygon points="0,-32 -42,2 42,2" fill="#0A0E18" />
+    </g>
+
+    <!-- Distant Ridge Pine Tree 4 -->
+    <g id="pineFarRidge">
+      <polygon points="0,-90 -7,-78 7,-78" fill="#13102A" />
+      <polygon points="0,-80 -13,-66 13,-66" fill="#13102A" />
+      <polygon points="0,-68 -18,-50 18,-50" fill="#13102A" />
+      <polygon points="0,-52 -22,-32 22,-32" fill="#13102A" />
+      <polygon points="0,-34 -27,-10 27,-10" fill="#13102A" />
+    </g>
+  </defs>
+
+  <g mask="url(#landscapeMask)">
+    <!-- 1. Ambient Violet & Purple Night Sky Glow -->
+    <rect width="900" height="800" fill="url(#skyNebula)" />
+    <rect width="900" height="800" fill="url(#auroraViolet)" />
+    <rect width="900" height="800" fill="url(#cyanAmbientGlow)" />
+
+    <!-- 2. Night Sky Stars -->
+    <g opacity="0.85">
+      <circle cx="35" cy="70" r="1.1" fill="#FFFFFF" opacity="0.9" />
+      <circle cx="75" cy="40" r="1.4" fill="#E9D5FF" opacity="0.95" />
+      <circle cx="120" cy="100" r="0.9" fill="#FFFFFF" opacity="0.7" />
+      <circle cx="165" cy="55" r="1.2" fill="#C4B5FD" opacity="0.85" />
+      <circle cx="210" cy="85" r="1.5" fill="#FFFFFF" opacity="0.9" />
+      <circle cx="270" cy="45" r="1.0" fill="#E0E7FF" opacity="0.75" />
+      <circle cx="330" cy="90" r="1.3" fill="#FFFFFF" opacity="0.8" />
+      <circle cx="55" cy="140" r="1.1" fill="#FFFFFF" opacity="0.85" />
+      <circle cx="95" cy="180" r="0.9" fill="#E9D5FF" opacity="0.6" />
+      <circle cx="145" cy="155" r="1.3" fill="#FFFFFF" opacity="0.8" />
+      <circle cx="195" cy="125" r="1.0" fill="#DDD6FE" opacity="0.7" />
+      <circle cx="255" cy="160" r="1.4" fill="#FFFFFF" opacity="0.85" />
+      <circle cx="310" cy="135" r="0.9" fill="#FFFFFF" opacity="0.6" />
+      <circle cx="380" cy="75" r="1.2" fill="#FFFFFF" opacity="0.7" />
+      <circle cx="430" cy="115" r="1.0" fill="#E9D5FF" opacity="0.65" />
+    </g>
+
+    <!-- 3. Distant Layer 1: High Mountain Peaks (Deep Midnight Violet) -->
+    <path d="M-50,470 L30,370 L110,420 L180,340 L260,405 L350,320 L450,420 L560,360 L680,450 L950,400 L950,800 L-50,800 Z" fill="#1C1035" opacity="0.85" />
+
+    <!-- 4. Mid-distance Layer 2: Mountain Slopes -->
+    <path d="M-50,520 L50,450 L140,490 L210,430 L310,495 L400,440 L500,510 L610,460 L750,530 L950,480 L950,800 L-50,800 Z" fill="#120A24" opacity="0.9" />
+
+    <!-- Violet Mist Layer across Mountain Valleys -->
+    <ellipse cx="180" cy="495" rx="260" ry="45" fill="#3B0764" opacity="0.45" />
+    <ellipse cx="90" cy="550" rx="190" ry="40" fill="#2E1065" opacity="0.5" />
+
+    <!-- 5. Distant Pine Ridge -->
+    <g transform="translate(0, 520)" opacity="0.85">
+      <use href="#pineFarRidge" x="15" y="30" transform="scale(0.85)" />
+      <use href="#pineFarRidge" x="40" y="25" transform="scale(0.9)" />
+      <use href="#pineFarRidge" x="65" y="35" transform="scale(0.8)" />
+      <use href="#pineFarRidge" x="90" y="20" transform="scale(0.95)" />
+      <use href="#pineFarRidge" x="120" y="30" transform="scale(0.85)" />
+      <use href="#pineFarRidge" x="150" y="22" transform="scale(1.0)" />
+      <use href="#pineFarRidge" x="180" y="32" transform="scale(0.8)" />
+      <use href="#pineFarRidge" x="210" y="25" transform="scale(0.9)" />
+      <use href="#pineFarRidge" x="245" y="30" transform="scale(0.85)" />
+      <use href="#pineFarRidge" x="280" y="20" transform="scale(1.0)" />
+      <use href="#pineFarRidge" x="320" y="35" transform="scale(0.8)" />
+      <use href="#pineFarRidge" x="360" y="25" transform="scale(0.9)" />
+      <use href="#pineFarRidge" x="410" y="30" transform="scale(0.85)" />
+      <use href="#pineFarRidge" x="460" y="20" transform="scale(0.95)" />
+      <use href="#pineFarRidge" x="520" y="35" transform="scale(0.8)" />
+    </g>
+
+    <!-- 6. Midground Pine Trees -->
+    <g transform="translate(0, 590)">
+      <use href="#pineMidSlope" x="20" y="20" transform="scale(1.1)" />
+      <use href="#pineMidSlope" x="55" y="10" transform="scale(1.25)" />
+      <use href="#pineMidSlope" x="95" y="25" transform="scale(1.05)" />
+      <use href="#pineMidSlope" x="135" y="5" transform="scale(1.3)" />
+      <use href="#pineMidSlope" x="180" y="18" transform="scale(1.15)" />
+      <use href="#pineMidSlope" x="225" y="8" transform="scale(1.2)" />
+      <use href="#pineMidSlope" x="270" y="22" transform="scale(1.05)" />
+      <use href="#pineMidSlope" x="320" y="12" transform="scale(1.15)" />
+      <use href="#pineMidSlope" x="375" y="25" transform="scale(1.0)" />
+      <use href="#pineMidSlope" x="430" y="15" transform="scale(1.1)" />
+    </g>
+
+    <!-- 7. Foreground Sharp Dark Pine Silhouettes (matching Reference behind Quote & Profile) -->
+    <g transform="translate(0, 740)">
+      <use href="#pineTallSharp" x="15" y="0" transform="scale(1.5)" />
+      <use href="#pineBushySharp" x="50" y="15" transform="scale(1.35)" />
+      <use href="#pineTallSharp" x="85" y="-12" transform="scale(1.65)" />
+      <use href="#pineBushySharp" x="130" y="10" transform="scale(1.4)" />
+      <use href="#pineTallSharp" x="170" y="-8" transform="scale(1.55)" />
+      <use href="#pineBushySharp" x="215" y="15" transform="scale(1.3)" />
+      <use href="#pineTallSharp" x="260" y="5" transform="scale(1.45)" />
+      <use href="#pineBushySharp" x="310" y="20" transform="scale(1.25)" />
+      <use href="#pineTallSharp" x="365" y="10" transform="scale(1.35)" />
+      <use href="#pineBushySharp" x="425" y="25" transform="scale(1.15)" />
+      <use href="#pineTallSharp" x="485" y="15" transform="scale(1.25)" />
+    </g>
+
+    <!-- Dark ground base -->
+    <rect x="0" y="720" width="900" height="80" fill="#04060C" />
+  </g>
+</svg>
