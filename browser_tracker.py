@@ -1,5 +1,6 @@
 
 import ctypes
+import os
 import sqlite3
 import time
 from datetime import datetime
@@ -10,7 +11,7 @@ import psutil
 from pywinauto import Desktop
 
 
-DB_PATH = Path(__file__).resolve().parent / "tracker.db"
+DB_PATH = Path(os.environ.get("TIME_TRACKER_DB_PATH", Path(__file__).resolve().parent / "tracker.db"))
 POLL_INTERVAL = 2
 
 BROWSER_PROCESSES = {
