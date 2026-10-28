@@ -75,6 +75,7 @@ export function App() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isBackendConnected, setIsBackendConnected] = useState<boolean>(false);
   const [backendError, setBackendError] = useState<string | null>(null);
+  const [trackerError, setTrackerError] = useState<string | null>(null);
   const [dbPath, setDbPath] = useState<string>('');
 
   const [isTracking, setIsTracking] = useState<boolean>(false);
@@ -631,7 +632,7 @@ export function App() {
   // Tracking Toggle
   const handleToggleTracking = async () => {
     setIsTogglingTracker(true);
-    setBackendError(null);
+    setTrackerError(null);
     try {
       const res = await api.toggleTracker();
       setIsTracking(res.is_tracking);
@@ -639,7 +640,7 @@ export function App() {
       setTimeout(() => setTrackerMessage(null), 3500);
       loadDataForDate(selectedDate);
     } catch (err: unknown) {
-      setBackendError(
+      setTrackerError(
         err instanceof Error
           ? err.message
           : 'Failed to toggle tracking state.'
@@ -657,7 +658,8 @@ export function App() {
       setTrackerMessage(res.message);
       setTimeout(() => setTrackerMessage(null), 3500);
     } catch (err: unknown) {
-      setBackendError(err instanceof Error ? err.message : 'Failed to update autostart.');
+      setTrackerMessage(err instanceof Error ? err.message : 'Failed to update autostart.');
+      setTimeout(() => setTrackerMessage(null), 4000);
     }
   };
 
@@ -777,6 +779,32 @@ export function App() {
                 >
                   <RefreshIcon size={12} /> Retry Connection
                 </button>
+              </div>
+            </div>
+          )}
+
+          {trackerError && (
+            <div className="error-banner" style={{ borderColor: 'rgba(239, 68, 68, 0.4)' }}>
+              <AlertIcon size={20} style={{ flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <strong>Tracker Error:</strong> {trackerError}
+                <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                  <button
+                    className="btn-secondary"
+                    onClick={handleToggleTracking}
+                    disabled={isTogglingTracker}
+                    style={{ fontSize: 12, padding: '4px 10px' }}
+                  >
+                    <RefreshIcon size={12} /> Retry Tracker
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => setTrackerError(null)}
+                    style={{ fontSize: 12, padding: '4px 10px' }}
+                  >
+                    Dismiss
+                  </button>
+                </div>
               </div>
             </div>
           )}

@@ -26,7 +26,7 @@ from api.activity_intelligence import derive_specific_activity
 
 _ROOT = Path(__file__).resolve().parent.parent
 DB_PATH = Path(os.environ.get("TIME_TRACKER_DB_PATH", _ROOT / "tracker.db"))
-TRACKER_LOG_PATH = _ROOT / "tracker.log"
+TRACKER_LOG_PATH = Path(os.environ.get("TIME_TRACKER_LOG_PATH", DB_PATH.parent / "tracker.log"))
 MUTEX_NAME = r"Local\TimeTrackerV4"
 
 # Global lock to synchronize start/stop operations within the API server
@@ -107,7 +107,7 @@ def is_mutex_active() -> bool:
 
 
 def find_tracker_processes() -> list[psutil.Process]:
-    """Find any python processes running main.py in background tracking mode."""
+    """Find any processes running background tracking (main.py in dev or --tracker-only in packaged)."""
     matches = []
     current_pid = os.getpid()
 
@@ -127,7 +127,12 @@ def find_tracker_processes() -> list[psutil.Process]:
             if not cmd:
                 continue
 
-            # Must run main.py without CLI subcommands (which are one-shot utilities)
+            # 1. Dedicated packaged/headless tracker process
+            if any(arg == "--tracker-only" for arg in cmd):
+                matches.append(p)
+                continue
+
+            # 2. Must run main.py without CLI subcommands (which are one-shot utilities)
             is_main = False
             args_after_main: list[str] = []
             for idx, arg in enumerate(cmd):
@@ -144,19 +149,27 @@ def find_tracker_processes() -> list[psutil.Process]:
             continue
 
     # Prioritize worker processes (children in process tree or processes with active threads)
-    matches.sort(
-        key=lambda p: (
-            p.ppid() in [m.pid for m in matches],
-            getattr(p, "num_threads", lambda: 1)(),
-        ),
-        reverse=True,
-    )
+    def _safe_sort_key(proc):
+        try:
+            ppid = proc.ppid()
+            is_child = ppid in [m.pid for m in matches]
+        except Exception:
+            is_child = False
+        try:
+            threads = proc.num_threads() if callable(getattr(proc, "num_threads", None)) else 1
+            if not isinstance(threads, (int, float)):
+                threads = 1
+        except Exception:
+            threads = 1
+        return (1 if is_child else 0, threads)
+
+    matches.sort(key=_safe_sort_key, reverse=True)
 
     return matches
 
 
 def find_browser_tracker_processes() -> list[psutil.Process]:
-    """Find any python processes running browser_tracker.py."""
+    """Find any processes running browser tracker (browser_tracker.py in dev or --browser-tracker-only in packaged)."""
     matches = []
     current_pid = os.getpid()
 
@@ -167,7 +180,7 @@ def find_browser_tracker_processes() -> list[psutil.Process]:
             cmd = p.info.get("cmdline") or []
             if not cmd:
                 continue
-            if any(Path(arg).name.lower() == "browser_tracker.py" for arg in cmd):
+            if any(arg == "--browser-tracker-only" for arg in cmd) or any(Path(arg).name.lower() == "browser_tracker.py" for arg in cmd):
                 matches.append(p)
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
@@ -473,10 +486,58 @@ def _recover_dangling_observations() -> int:
 
         if closed_count > 0:
             conn.commit()
+    except sqlite3.OperationalError:
+        # Table observations does not exist yet (e.g. fresh install or pre-migration database)
+        return 0
     finally:
         conn.close()
 
     return closed_count
+
+
+def wait_for_tracker_startup(proc: subprocess.Popen, timeout: float = 4.0) -> bool:
+    """
+    Perform a bounded startup handshake to verify tracking engine initialization.
+    Confirms that the tracker has acquired its system mutex without prematurely exiting.
+    If the process exits prematurely (including exit code 0) or times out, collects diagnostics,
+    cleans up the process, and raises a descriptive RuntimeError.
+    """
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        # 1. Detect premature process exit
+        poll_res = proc.poll()
+        if poll_res is not None:
+            err_code = proc.returncode
+            detail = _read_last_log_error()
+            err_msg = f"Tracker process exited prematurely with code {err_code}." + (f" Details: {detail}" if detail else "")
+            raise RuntimeError(err_msg)
+
+        # 2. Check if tracker initialized by holding its named mutex
+        if is_mutex_active():
+            if proc.poll() is None:
+                return True
+
+        # Fallback for non-Windows or testing environments where mutex is mocked or unavailable
+        if sys.platform != "win32" and proc.poll() is None:
+            return True
+
+        time.sleep(0.08)
+
+    # 3. Timeout handling
+    if proc.poll() is not None:
+        err_code = proc.returncode
+        detail = _read_last_log_error()
+        raise RuntimeError(f"Tracker process exited with code {err_code} before completing startup." + (f" Details: {detail}" if detail else ""))
+
+    # Process is still running but did not acquire mutex within bounded timeout; terminate cleanly
+    try:
+        proc.terminate()
+        proc.wait(timeout=1.0)
+    except Exception:
+        pass
+
+    detail = _read_last_log_error()
+    raise RuntimeError(f"Tracker process failed to initialize within {timeout:.1f}s." + (f" Details: {detail}" if detail else ""))
 
 
 def start_tracking() -> dict:
@@ -500,9 +561,24 @@ def start_tracking() -> dict:
         # Close any previous unclosed observations before starting
         _recover_dangling_observations()
 
+        is_frozen = getattr(sys, "frozen", False)
         python_exe = get_python_executable()
         main_script = str(_ROOT / "main.py")
         browser_script = str(_ROOT / "browser_tracker.py")
+
+        env = os.environ.copy()
+        env["TIME_TRACKER_DB_PATH"] = str(DB_PATH)
+
+        if is_frozen:
+            # In packaged mode, invoke frozen executable with dedicated headless flags
+            tracker_cmd = [sys.executable, "--tracker-only"]
+            browser_cmd = [sys.executable, "--browser-tracker-only"]
+            cwd = str(Path(sys.executable).parent)
+        else:
+            # In development mode, invoke python scripts directly
+            tracker_cmd = [python_exe, main_script]
+            browser_cmd = [python_exe, browser_script]
+            cwd = str(_ROOT)
 
         creationflags = 0
         if sys.platform == "win32":
@@ -510,46 +586,43 @@ def start_tracking() -> dict:
             # 0x08000000 = CREATE_NO_WINDOW ensures no stray console interference
             creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | 0x08000000
 
+        proc = None
         try:
             # Append output to tracker.log to preserve crash tracebacks and diagnostic logs
             log_file = open(TRACKER_LOG_PATH, "a", encoding="utf-8", buffering=1)
-            log_file.write(f"\n--- Tracking started at {datetime.now(timezone.utc).isoformat()} (Python: {python_exe}) ---\n")
+            log_file.write(f"\n--- Tracking started at {datetime.now(timezone.utc).isoformat()} (Command: {' '.join(tracker_cmd)}) ---\n")
             log_file.flush()
 
             # Launch main activity tracker
-            _managed_tracker_proc = subprocess.Popen(
-                [python_exe, main_script],
-                cwd=str(_ROOT),
+            proc = subprocess.Popen(
+                tracker_cmd,
+                cwd=cwd,
+                env=env,
                 creationflags=creationflags,
                 stdout=log_file,
                 stderr=log_file,
             )
 
+            # Perform reliable startup handshake (waits for mutex acquisition)
+            wait_for_tracker_startup(proc, timeout=4.0)
+
+            # Only assign to managed reference once verified active and initialized
+            _managed_tracker_proc = proc
+
             # Optionally launch browser tracker if not already running
-            if not find_browser_tracker_processes() and Path(browser_script).exists():
-                try:
-                    _managed_browser_proc = subprocess.Popen(
-                        [python_exe, browser_script],
-                        cwd=str(_ROOT),
-                        creationflags=creationflags,
-                        stdout=log_file,
-                        stderr=log_file,
-                    )
-                except Exception:
-                    _managed_browser_proc = None
-
-            # Allow brief moment for process to acquire mutex
-            time.sleep(0.4)
-
-            # Check if process crashed immediately
-            if _managed_tracker_proc.poll() is not None:
-                err_code = _managed_tracker_proc.returncode
-                _managed_tracker_proc = None
-                detail = _read_last_log_error()
-                err_msg = f"Tracker process exited immediately with code {err_code}." + (f" Details: {detail}" if detail else "")
-                _last_exit_code = err_code
-                _last_exit_message = err_msg
-                raise RuntimeError(err_msg)
+            if not find_browser_tracker_processes():
+                if is_frozen or Path(browser_script).exists():
+                    try:
+                        _managed_browser_proc = subprocess.Popen(
+                            browser_cmd,
+                            cwd=cwd,
+                            env=env,
+                            creationflags=creationflags,
+                            stdout=log_file,
+                            stderr=log_file,
+                        )
+                    except Exception:
+                        _managed_browser_proc = None
 
             # Trigger non-blocking missed-activity recovery check
             try:
@@ -574,6 +647,12 @@ def start_tracking() -> dict:
             }
 
         except Exception as e:
+            if proc is not None and proc.poll() is None:
+                try:
+                    proc.terminate()
+                    proc.wait(timeout=1.0)
+                except Exception:
+                    pass
             _managed_tracker_proc = None
             raise RuntimeError(f"Failed to start tracker: {e}") from e
 

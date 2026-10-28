@@ -237,24 +237,29 @@ def get_work_area() -> tuple[int, int, int, int] | None:
 def setup_environment():
     """Configure database and storage paths for frozen vs development mode."""
     if getattr(sys, "frozen", False):
-        appdata = Path(os.environ.get("APPDATA", Path.home())) / "TimeTrackerAI"
-        appdata.mkdir(parents=True, exist_ok=True)
-        db_path = appdata / "tracker.db"
-        # Seed user database from existing repository/install files if fresh install
-        if not db_path.exists() or db_path.stat().st_size == 0:
-            for candidate in [
-                _ROOT / "tracker.db",
-                _ROOT / "_internal" / "tracker.db",
-            ]:
-                if candidate.exists() and candidate.stat().st_size > 0:
-                    try:
-                        import shutil
-                        shutil.copy2(candidate, db_path)
-                        logger.info("Initialized user database from %s", candidate)
-                        break
-                    except Exception as e:
-                        logger.warning("Could not seed database from %s: %s", candidate, e)
-        os.environ["TIME_TRACKER_DB_PATH"] = str(db_path)
+        custom_db = os.environ.get("TIME_TRACKER_DB_PATH")
+        if custom_db:
+            db_path = Path(custom_db)
+            db_path.parent.mkdir(parents=True, exist_ok=True)
+        else:
+            appdata = Path(os.environ.get("APPDATA", Path.home())) / "TimeTrackerAI"
+            appdata.mkdir(parents=True, exist_ok=True)
+            db_path = appdata / "tracker.db"
+            # Seed user database from existing repository/install files if fresh install
+            if not db_path.exists() or db_path.stat().st_size == 0:
+                for candidate in [
+                    _ROOT / "tracker.db",
+                    _ROOT / "_internal" / "tracker.db",
+                ]:
+                    if candidate.exists() and candidate.stat().st_size > 0:
+                        try:
+                            import shutil
+                            shutil.copy2(candidate, db_path)
+                            logger.info("Initialized user database from %s", candidate)
+                            break
+                        except Exception as e:
+                            logger.warning("Could not seed database from %s: %s", candidate, e)
+            os.environ["TIME_TRACKER_DB_PATH"] = str(db_path)
         logger.info("Running packaged executable. User database: %s", db_path)
     else:
         # Development mode: preserve repository tracker.db
@@ -484,6 +489,8 @@ def main():
     parser.add_argument("--dev", action="store_true", help="Connect to Vite dev server on port 5173")
     parser.add_argument("--port", type=int, default=DEFAULT_BACKEND_PORT, help="Backend port (default 8000)")
     parser.add_argument("--server-only", action="store_true", help="Run FastAPI backend headlessly without GUI")
+    parser.add_argument("--tracker-only", action="store_true", help="Run background tracking daemon headlessly")
+    parser.add_argument("--browser-tracker-only", action="store_true", help="Run browser URL tracking daemon headlessly")
     args, unknown = parser.parse_known_args()
 
     setup_environment()
@@ -494,6 +501,22 @@ def main():
         from api.server import app as fastapi_app
         logger.info("Starting headless Time Tracker AI backend on port %d...", args.port)
         uvicorn.run(fastapi_app, host="127.0.0.1", port=args.port, log_level="warning", access_log=False)
+        sys.exit(0)
+
+    # If invoked in headless tracker mode, run tracking engine immediately
+    if args.tracker_only:
+        logger.info("Starting headless Time Tracker AI activity tracker...")
+        import main
+        sys.argv = [sys.argv[0]]
+        main.main()
+        sys.exit(0)
+
+    # If invoked in headless browser tracker mode, run browser tracker immediately
+    if args.browser_tracker_only:
+        logger.info("Starting headless Time Tracker AI browser tracker...")
+        import browser_tracker
+        sys.argv = [sys.argv[0]]
+        browser_tracker.main()
         sys.exit(0)
 
     # Detect custom protocol URI argument (e.g. from Windows toast click or timetracker://)
